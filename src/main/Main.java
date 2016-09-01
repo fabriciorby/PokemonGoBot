@@ -105,7 +105,7 @@ public class Main {
 
 		inventories.getPokebank();
 		
-		System.out.println("Trainer Name: " + pp.getPlayerData().getUsername());
+		System.out.println("Nome: " + pp.getPlayerData().getUsername());
 		System.out.println("Level: " + stats.getLevel());
 		System.out.println("XP: " + stats.getExperience() + " (" 
 				+ (stats.getNextLevelXp() - stats.getExperience()) + " to next level)");
@@ -159,7 +159,7 @@ public class Main {
 						{
 							System.out.println(item.getItemId());
 						}
-						inventories.updateInventories(true); 
+						inventories.updateInventories(); 
 					}
 					
 				}
@@ -206,7 +206,7 @@ public class Main {
 					{
 						inventories.getItemBag().removeItem(item.getItemId(), item.getCount());
 						System.out.println("Removendo suas potions e revives");
-						inventories.updateInventories(true); 
+						inventories.updateInventories(); 
 						sleepRandom(1000, 2000);
 					}
 				}
