@@ -113,10 +113,10 @@ public class Main {
 		System.out.println("Stardust: " + pp.getCurrency(Currency.STARDUST));
 		ArrayList<Point> pontos = new ArrayList<Point>();
 		pontos.add(new Point(-23.584289, -46.661537));
-		pontos.add(new Point(-23.586077, -46.655345));
-		pontos.add(new Point(-23.590488, -46.653297));
-		pontos.add(new Point(-23.590443, -46.652091));
-		pontos.add(new Point(-23.582486, -46.659544));
+		pontos.add(new Point(-23.583952, -46.660532));
+		pontos.add(new Point(-23.584045, -46.659832));
+		pontos.add(new Point(-23.58383, -46.660822));
+		pontos.add(new Point(-23.584547, -46.661737));
 		int cont = 0, distancia;
 		double totalLat, totalLong, parteLat, parteLong;
 		CatchOptions catchOptions = new CatchOptions(go);
@@ -247,9 +247,8 @@ public class Main {
 						}
 					}
 				}
-
 				contLogin++;
-				if (contLogin == 500) //reseta a autorização a cada 10 minutos +/-
+				if (contLogin == 300) //reseta a autorização a cada 10 minutos +/-
 				{
 					if (opcao == 1)
 					{
