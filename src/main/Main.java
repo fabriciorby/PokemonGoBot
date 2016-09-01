@@ -138,6 +138,8 @@ public class Main {
 					pokemon.encounterPokemon();
 					System.out.println("Capturando um " + PokeDictionary.getDisplayName(pokemon.getPokemonIdValue(), Locale.ENGLISH));
 					System.out.println(pokemon.catchPokemon(catchOptions));
+					pp.updateProfile();
+					stats = pp.getStats();
 					System.out.println("Level: " + stats.getLevel());
 					System.out.println("XP: " + stats.getExperience() + " (" + (stats.getNextLevelXp() - stats.getExperience()) + " to next level)");
 					TimeUnit.SECONDS.sleep(3);
