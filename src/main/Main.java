@@ -159,7 +159,7 @@ public class Main {
 						{
 							System.out.println(item.getItemId());
 						}
-						inventories.updateInventories(); 
+						inventories.updateInventories(true); 
 					}
 					
 				}
@@ -179,7 +179,7 @@ public class Main {
 					}
 					pp.updateProfile();
 					stats = pp.getStats();
-					inventories.updateInventories(); 
+					inventories.updateInventories(true); 
 					System.out.println("Status do treinador:");
 					System.out.println("Level: " + stats.getLevel());
 					System.out.println("XP: " + stats.getExperience() + " (" + (stats.getNextLevelXp() - stats.getExperience()) + " to next level)");
@@ -205,7 +205,8 @@ public class Main {
 					if ((item.isPotion() || item.isRevive()) && (item.getCount() != 0))
 					{
 						inventories.getItemBag().removeItem(item.getItemId(), item.getCount());
-						inventories.updateInventories(); 
+						System.out.println("Removendo suas potions e revives");
+						inventories.updateInventories(true); 
 						sleepRandom(1000, 2000);
 					}
 				}
@@ -242,7 +243,7 @@ public class Main {
 						{
 							System.out.println("Evoluindo: " + pokemon.getPokemonId());
 							System.out.println(pokemon.evolve());
-							sleepRandom(1000, 2000);
+							sleepRandom(2000, 3000);
 						}
 					}
 				}
@@ -260,7 +261,7 @@ public class Main {
 					}
 					contLogin = 0;
 				}
-				sleepRandom(1000, 2000);
+				sleepRandom(800, 1500);
 			}
 			
 			
