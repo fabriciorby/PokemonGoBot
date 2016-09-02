@@ -119,7 +119,10 @@ public class Main {
 		int cont = 0, distancia;
 		double totalLat, totalLong, parteLat, parteLong;
 		CatchOptions catchOptions = new CatchOptions(go);
-		catchOptions.withProbability(0.5);
+		catchOptions.withProbability(0);
+		catchOptions.maxPokeballs(3);
+		catchOptions.useSmartSelect(true);
+		catchOptions.useRazzberries(true);
 		while (true) {
 			if (cont + 1 != pontos.size())
 			{
@@ -197,6 +200,7 @@ public class Main {
 							{
 								System.out.println("Incubando um ovo...");
 								egg.incubate(eggIncubator);
+								inventories.updateInventories(true);
 							}
 						}
 					}
