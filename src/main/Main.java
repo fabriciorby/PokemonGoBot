@@ -18,6 +18,8 @@ import com.pokegoapi.api.map.fort.Pokestop;
 import com.pokegoapi.api.map.fort.PokestopLootResult;
 import com.pokegoapi.api.map.pokemon.CatchResult;
 import com.pokegoapi.api.map.pokemon.CatchablePokemon;
+import com.pokegoapi.util.Log;
+import com.pokegoapi.util.Log.Level;
 import com.pokegoapi.util.MapUtil;
 import com.pokegoapi.util.PokeDictionary;
 
@@ -40,6 +42,7 @@ public class Main {
 
 	public static void main(String[] args) throws LoginFailedException, RemoteServerException, InterruptedException, NoSuchItemException {
 		// TODO Auto-generated method stub
+		Log.setLevel(Level.NONE);
 		OkHttpClient httpClient = new OkHttpClient();
 		PokemonGo go = new PokemonGo(httpClient);
 		
@@ -100,10 +103,6 @@ public class Main {
 		PlayerProfile pp = go.getPlayerProfile(); // to get the user profile
 		Stats stats = pp.getStats();
 		Inventories inventories = go.getInventories();
-
-		inventories.getCandyjar();
-
-		inventories.getPokebank();
 		
 		System.out.println("Nome: " + pp.getPlayerData().getUsername());
 		System.out.println("Level: " + stats.getLevel());
@@ -120,7 +119,7 @@ public class Main {
 		int cont = 0, distancia;
 		double totalLat, totalLong, parteLat, parteLong;
 		CatchOptions catchOptions = new CatchOptions(go);
-		catchOptions.withProbability(0);
+		catchOptions.withProbability(0.5);
 		while (true) {
 			if (cont + 1 != pontos.size())
 			{
@@ -143,7 +142,7 @@ public class Main {
 						0
 				);
 				//System.out.println(go.getLatitude() + ", " + go.getLongitude());
-				System.out.println(".");
+				System.out.print(". ");
 				Map map = go.getMap();
 				CatchResult cr;
 				PokestopLootResult plr;
@@ -153,11 +152,12 @@ public class Main {
 					if (pokestop.canLoot()) 
 					{
 						plr = pokestop.loot();
-						System.out.println("Pokestop EXP: " + plr.getExperience());
+						System.out.println("\n----------POKESTOP----------");
+						System.out.println("EXP: " + plr.getExperience());
 						System.out.println("Itens: ");
 						for (ItemAward item :  plr.getItemsAwarded())
 						{
-							System.out.println(item.getItemId());
+							System.out.println(item.getItemId().name());
 						}
 						inventories.updateInventories(); 
 					}
@@ -167,6 +167,7 @@ public class Main {
 				for (CatchablePokemon pokemon : map.getCatchablePokemon()) // get all currently Catchable Pokemon around you
 				{
 					pokemon.encounterPokemon();
+					System.out.println("\n----POKEMON ENCONTRADO----");
 					System.out.println("Capturando um " + PokeDictionary.getDisplayName(pokemon.getPokemonIdValue(), Locale.ENGLISH));
 					cr = pokemon.catchPokemon(catchOptions); //add CatchResult
 					if (cr.isFailed())
@@ -180,7 +181,7 @@ public class Main {
 					pp.updateProfile();
 					stats = pp.getStats();
 					inventories.updateInventories(true); 
-					System.out.println("Status do treinador:");
+					System.out.println("--------MEUS STATUS--------");
 					System.out.println("Level: " + stats.getLevel());
 					System.out.println("XP: " + stats.getExperience() + " (" + (stats.getNextLevelXp() - stats.getExperience()) + " to next level)");
 					sleepRandom(2000, 3000);
@@ -194,6 +195,7 @@ public class Main {
 						{
 							if (!egg.isIncubate())
 							{
+								System.out.println("Incubando um ovo...");
 								egg.incubate(eggIncubator);
 							}
 						}
@@ -205,7 +207,7 @@ public class Main {
 					if ((item.isPotion() || item.isRevive()) && (item.getCount() != 0))
 					{
 						inventories.getItemBag().removeItem(item.getItemId(), item.getCount());
-						System.out.println("Removendo suas potions e revives");
+						System.out.println("Removendo suas potions e revives...");
 						inventories.updateInventories(); 
 						sleepRandom(1000, 2000);
 					}
@@ -216,40 +218,55 @@ public class Main {
 				for (int j = 0; j < totalPokemon; j++)
 				{
 					Pokemon pokemon = inventories.getPokebank().getPokemons().get(j);
-					if (
-							pokemon.getPokemonId().equals("PIDGEY") || 
-							pokemon.getPokemonId().equals("WEEDLE") || 
-							pokemon.getPokemonId().equals("CATERPIE")
-						)
-					{
-						if (pokemon.canEvolve())
-						{
-							System.out.println("Evoluindo: " + pokemon.getPokemonId());
-							System.out.println(pokemon.evolve());
-							sleepRandom(1000, 2000);
-						}
-					}
+					
 					if (pokemon.getIvRatio() < 0.8)
 					{
-						System.out.println("Transferindo: " + pokemon.getPokemonId());
-						System.out.println(pokemon.transferPokemon());
+						if (
+								pokemon.getPokemonId().name().equals("PIDGEY") || 
+								pokemon.getPokemonId().name().equals("WEEDLE") || 
+								pokemon.getPokemonId().name().equals("CATERPIE") ||
+								pokemon.getPokemonId().name().equals("ZUBAT") ||
+								pokemon.getPokemonId().name().equals("RATTATA")
+							)
+						{
+							if (pokemon.canEvolve())
+							{
+								System.out.println("\nEvoluindo "
+										+ PokeDictionary.getDisplayName(pokemon.getPokemonId().getNumber(), Locale.ENGLISH)
+										+ " -> " 
+										+ PokeDictionary.getDisplayName(pokemon.getPokemonId().getNumber() + 1, Locale.ENGLISH)
+										+ "..."
+								);
+								pokemon = pokemon.evolve().getEvolvedPokemon();
+								System.out.println("Pokemon evoluido com sucesso!");
+								inventories.updateInventories(true);
+								sleepRandom(1000, 2000);
+							}
+						}
+						System.out.println("\nTransferindo " + PokeDictionary.getDisplayName(pokemon.getPokemonId().getNumber(), Locale.ENGLISH) + "...");
+						pokemon.transferPokemon();
+						System.out.println("Pokemon transferido com sucesso!");
 						inventories.updateInventories(true);
 						totalPokemon--;
 						sleepRandom(1000, 2000);
-					} 
+					}
 					else
 					{
-						if (pokemon.canEvolve())
+						while (pokemon.canEvolve())
 						{
-							System.out.println("Evoluindo: " + pokemon.getPokemonId());
-							System.out.println(pokemon.evolve());
-							sleepRandom(2000, 3000);
+							System.out.println("\nEvoluindo: " + PokeDictionary.getDisplayName(pokemon.getPokemonId().getNumber(), Locale.ENGLISH));
+							System.out.println("Para: " + PokeDictionary.getDisplayName(pokemon.getPokemonId().getNumber() + 1, Locale.ENGLISH));
+							pokemon = pokemon.evolve().getEvolvedPokemon();
+							System.out.println("Pokemon evoluido com sucesso!");
+							inventories.updateInventories(true);
+							sleepRandom(1000, 2000);
 						}
 					}
 				}
 				contLogin++;
-				if (contLogin == 300) //reseta a autorização a cada 10 minutos +/-
+				if (contLogin == 100) //reseta a autorização a cada 3 minutos +/-
 				{
+					System.out.println("Atualizando o token...");
 					if (opcao == 1)
 					{
 						provider = new GoogleUserCredentialProvider(httpClient);
@@ -262,9 +279,6 @@ public class Main {
 				}
 				sleepRandom(800, 1500);
 			}
-			
-			
-			
 		}
 
 	}
@@ -275,7 +289,7 @@ public class Main {
         int to = Math.min(minMilliseconds, maxMilliseconds);
         try {
             int randomInt = random.nextInt((from - to) + 1) + to;
-            System.out.println("Esperando " + (randomInt / 1000.0F) + " segundos.");
+            //System.out.println("Esperando " + (randomInt / 1000.0F) + " segundos.");
             TimeUnit.MILLISECONDS.sleep(randomInt);
         } catch (InterruptedException e) {
             e.printStackTrace();
