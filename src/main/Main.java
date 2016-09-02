@@ -71,6 +71,7 @@ public class Main {
 
 			// we should be able to login with this token
 			provider.login(access);
+			access = provider.getRefreshToken();
 			go.login(provider);
 			/**
 			* After this, if you do not want to re-authorize the google account every time, 
@@ -273,9 +274,7 @@ public class Main {
 					System.out.println("Atualizando o token...");
 					if (opcao == 1)
 					{
-						provider = new GoogleUserCredentialProvider(httpClient);
-						provider.login(access);
-						go.login(provider);
+						go.login(new GoogleUserCredentialProvider(httpClient, access));
 					} else {
 						go.login(new PtcCredentialProvider(httpClient, username, password));
 					}
