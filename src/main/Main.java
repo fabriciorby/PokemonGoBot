@@ -230,6 +230,7 @@ public class Main {
 								{
 									catchOptions.usePokeball(Pokeball.ULTRABALL);
 								}
+
 								if (berry.getCount() > 3)
 								{
 									catchOptions.useRazzberries(true);
@@ -257,6 +258,26 @@ public class Main {
 								} catch (AsyncPokemonGoException e){
 									System.out.println("Erro desconhecido.");
 									e.printStackTrace();
+									logged = false;
+									do {
+									    try {
+									    	System.out.println("Atualizando o token...");
+											if (opcao == 1)
+											{
+												provider = new GoogleUserCredentialProvider(httpClient);
+												provider.login(access);
+												go.login(provider);
+												logged = true;
+											} else {
+												go.login(new PtcCredentialProvider(httpClient, username, password));
+												logged = true;
+											}
+									    } catch(Exception w) {
+									    	w.printStackTrace();
+									    	System.out.println("Erro! Tentando logar novamente...");
+									    	sleepRandom(1000, 1500);
+									    }
+									} while(!logged);
 								}
 							}
 							else
