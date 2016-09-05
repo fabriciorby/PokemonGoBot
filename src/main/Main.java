@@ -11,6 +11,7 @@ import com.pokegoapi.api.PokemonGo;
 import com.pokegoapi.api.inventory.EggIncubator;
 import com.pokegoapi.api.inventory.Inventories;
 import com.pokegoapi.api.inventory.Item;
+import com.pokegoapi.api.inventory.Pokeball;
 import com.pokegoapi.api.inventory.Stats;
 import com.pokegoapi.api.map.Map;
 import com.pokegoapi.api.map.Point;
@@ -24,6 +25,7 @@ import com.pokegoapi.util.MapUtil;
 import com.pokegoapi.util.PokeDictionary;
 
 import POGOProtos.Inventory.Item.ItemAwardOuterClass.ItemAward;
+import POGOProtos.Inventory.Item.ItemIdOuterClass.ItemId;
 
 import com.pokegoapi.api.player.PlayerProfile;
 import com.pokegoapi.api.player.PlayerProfile.Currency;
@@ -32,6 +34,8 @@ import com.pokegoapi.api.pokemon.Pokemon;
 import com.pokegoapi.api.settings.CatchOptions;
 import com.pokegoapi.auth.GoogleUserCredentialProvider;
 import com.pokegoapi.auth.PtcCredentialProvider;
+import com.pokegoapi.exceptions.AsyncPokemonGoException;
+import com.pokegoapi.exceptions.EncounterFailedException;
 import com.pokegoapi.exceptions.LoginFailedException;
 import com.pokegoapi.exceptions.NoSuchItemException;
 import com.pokegoapi.exceptions.RemoteServerException;
@@ -40,7 +44,7 @@ import okhttp3.OkHttpClient;
 
 public class Main {
 
-	public static void main(String[] args) throws LoginFailedException, RemoteServerException, InterruptedException, NoSuchItemException {
+	public static void main(String[] args) throws LoginFailedException, RemoteServerException, InterruptedException, NoSuchItemException, EncounterFailedException {
 		// TODO Auto-generated method stub
 		Log.setLevel(Level.NONE);
 		OkHttpClient httpClient = new OkHttpClient();
@@ -49,6 +53,7 @@ public class Main {
 		System.out.println("Faça login pelo google (1) ou PTC (2)");
 		Scanner sc = new Scanner(System.in);
 		Integer opcao = sc.nextInt();
+		Boolean logged = false;
 		String username = null, password = null, access = null;
 		GoogleUserCredentialProvider provider;
 		
@@ -68,11 +73,22 @@ public class Main {
 
 			// Ask the user to enter it in the standard input
 			access = sc.next();
+			
+			System.out.println("Logando...");
 
 			// we should be able to login with this token
-			provider.login(access);
-			access = provider.getRefreshToken();
-			go.login(provider);
+			
+			do {
+			    try {
+			    	provider.login(access);
+					go.login(provider);
+			        logged = true;
+			    } catch(Exception e) {
+			    	System.out.println("Erro! Tentando logar novamente...");
+			    	sleepRandom(1000, 1500);
+			    }
+			} while(!logged);
+			
 			/**
 			* After this, if you do not want to re-authorize the google account every time, 
 			* you will need to store the refresh_token that you can get the first time with provider.getRefreshToken()
@@ -96,10 +112,19 @@ public class Main {
 			System.out.println("Digite a senha: ");
 			password = sc.next();
 			
-			go.login(new PtcCredentialProvider(httpClient, username, password));
+			System.out.println("Logando...");
+			
+			do {
+			    try {
+			    	go.login(new PtcCredentialProvider(httpClient, username, password));
+			        logged = true;
+			    } catch(Exception e) {
+			    	System.out.println("Erro! Tentando logar novamente...");
+			    	sleepRandom(1000, 1500);
+			    }
+			} while(!logged);
 		}
 		
-		int contLogin = 0;
 		// After this you can access the api from the PokemonGo instance :
 		PlayerProfile pp = go.getPlayerProfile(); // to get the user profile
 		Stats stats = pp.getStats();
@@ -119,122 +144,196 @@ public class Main {
 		pontos.add(new Point(-23.584547, -46.661737));
 		int cont = 0, distancia;
 		double totalLat, totalLong, parteLat, parteLong;
+		Map map = go.getMap();
+		CatchResult cr;
+		PokestopLootResult plr;
 		CatchOptions catchOptions = new CatchOptions(go);
-		catchOptions.withProbability(0);
 		catchOptions.maxPokeballs(3);
-		catchOptions.useSmartSelect(true);
-		catchOptions.useRazzberries(true);
-		while (true) {
-			if (cont + 1 != pontos.size())
-			{
-				totalLat = pontos.get(cont).getLatitude() - pontos.get(cont + 1).getLatitude();
-				totalLong = pontos.get(cont).getLongitude() - pontos.get(cont + 1).getLongitude();
-				distancia = (int) MapUtil.distFrom(pontos.get(cont), pontos.get(cont + 1));
-			} else {
-				totalLat = pontos.get(cont).getLatitude() - pontos.get(0).getLatitude();
-				totalLong = pontos.get(cont).getLongitude() - pontos.get(0).getLongitude();
-				distancia = (int) MapUtil.distFrom(pontos.get(cont), pontos.get(0));
-				cont = 0;
-			}
-			parteLat = totalLat/distancia;
-			parteLong = totalLong/distancia;
-			for (int i = 0; i < distancia; i++)
-			{
-				go.setLocation(		 // set your position to get stuff around (altitude is not needed, you can use 1 for example)
-						pontos.get(0).getLatitude() - parteLat*i,
-						pontos.get(0).getLongitude() - parteLong*i,
-						0
-				);
-				//System.out.println(go.getLatitude() + ", " + go.getLongitude());
-				System.out.print(". ");
-				Map map = go.getMap();
-				CatchResult cr;
-				PokestopLootResult plr;
-				
-				for (Pokestop pokestop : map.getMapObjects().getPokestops()) // pega todas as pokestops
+		catchOptions.noMasterBall(true);
+		try {
+			while (true) {
+				if (cont + 1 != pontos.size())
 				{
-					if (pokestop.canLoot()) 
-					{
-						plr = pokestop.loot();
-						System.out.println("\n----------POKESTOP----------");
-						System.out.println("EXP: " + plr.getExperience());
-						System.out.println("Itens: ");
-						for (ItemAward item :  plr.getItemsAwarded())
-						{
-							System.out.println(item.getItemId().name());
-						}
-						inventories.updateInventories(); 
-					}
-					
+					totalLat = pontos.get(cont).getLatitude() - pontos.get(cont + 1).getLatitude();
+					totalLong = pontos.get(cont).getLongitude() - pontos.get(cont + 1).getLongitude();
+					distancia = (int) MapUtil.distFrom(pontos.get(cont), pontos.get(cont + 1));
+				} else {
+					totalLat = pontos.get(cont).getLatitude() - pontos.get(0).getLatitude();
+					totalLong = pontos.get(cont).getLongitude() - pontos.get(0).getLongitude();
+					distancia = (int) MapUtil.distFrom(pontos.get(cont), pontos.get(0));
+					cont = 0;
 				}
-				 
-				for (CatchablePokemon pokemon : map.getCatchablePokemon()) // get all currently Catchable Pokemon around you
+				parteLat = totalLat/distancia;
+				parteLong = totalLong/distancia;
+				for (int i = 0; i < distancia; i++)
 				{
-					pokemon.encounterPokemon();
-					System.out.println("\n----POKEMON ENCONTRADO----");
-					System.out.println("Capturando um " + PokeDictionary.getDisplayName(pokemon.getPokemonIdValue(), Locale.ENGLISH));
-					cr = pokemon.catchPokemon(catchOptions); //add CatchResult
-					if (cr.isFailed())
+					go.setLocation(		 // set your position to get stuff around (altitude is not needed, you can use 1 for example)
+							pontos.get(0).getLatitude() - parteLat*i,
+							pontos.get(0).getLongitude() - parteLong*i,
+							0
+					);
+					//System.out.println(go.getLatitude() + ", " + go.getLongitude());
+					System.out.print(". ");
+
+					for (Pokestop pokestop : map.getMapObjects().getPokestops()) // pega todas as pokestops
 					{
-						System.out.println("A captura falhou.");
-					} else {
-						System.out.println("Candies: " + cr.getCandyList().stream().mapToInt(Integer::intValue).sum());
-						System.out.println("XP: " + cr.getXpList().stream().mapToInt(Integer::intValue).sum());
-						System.out.println("Stardust: " + cr.getStardustList().stream().mapToInt(Integer::intValue).sum());
-					}
-					pp.updateProfile();
-					stats = pp.getStats();
-					inventories.updateInventories(true); 
-					System.out.println("--------MEUS STATUS--------");
-					System.out.println("Level: " + stats.getLevel());
-					System.out.println("XP: " + stats.getExperience() + " (" + (stats.getNextLevelXp() - stats.getExperience()) + " to next level)");
-					sleepRandom(2000, 3000);
-				}
-				
-				for (EggIncubator eggIncubator : inventories.getIncubators()) //Coloca os ovos para chocar
-				{
-					if (!eggIncubator.isInUse())
-					{
-						for(EggPokemon egg : inventories.getHatchery().getEggs())
+						if (pokestop.canLoot()) 
 						{
-							if (!egg.isIncubate())
+							plr = pokestop.loot();
+							System.out.println("\n----------POKESTOP----------");
+							System.out.println("EXP: " + plr.getExperience());
+							System.out.println("Itens: ");
+							for (ItemAward item :  plr.getItemsAwarded())
 							{
-								System.out.println("Incubando um ovo...");
-								egg.incubate(eggIncubator);
-								inventories.updateInventories(true);
+								System.out.println(item.getItemId().name());
 							}
 						}
+						
 					}
-				}
-				
-				for (Item item : inventories.getItemBag().getItems()) //Deleta todas as potions e revives
-				{
-					if ((item.isPotion() || item.isRevive()) && (item.getCount() != 0))
-					{
-						inventories.getItemBag().removeItem(item.getItemId(), item.getCount());
-						System.out.println("Removendo suas potions e revives...");
-						inventories.updateInventories(); 
-						sleepRandom(1000, 2000);
-					}
-				}
-				
-				List<Pokemon> pokemonLista = inventories.getPokebank().getPokemons();
-				int totalPokemon = pokemonLista.size();
-				for (int j = 0; j < totalPokemon; j++)
-				{
-					Pokemon pokemon = inventories.getPokebank().getPokemons().get(j);
 					
-					if (pokemon.getIvRatio() < 0.8)
+					for (Item item : inventories.getItemBag().getItems()) //Deleta todas as potions e revives
 					{
-						if (
-								pokemon.getPokemonId().name().equals("PIDGEY") || 
-								pokemon.getPokemonId().name().equals("WEEDLE") || 
-								pokemon.getPokemonId().name().equals("CATERPIE") ||
-								pokemon.getPokemonId().name().equals("ZUBAT") ||
-								pokemon.getPokemonId().name().equals("RATTATA")
-							)
+						if ((item.isPotion() || item.isRevive()) && (item.getCount() != 0))
 						{
-							if (pokemon.canEvolve())
+							inventories.getItemBag().removeItem(item.getItemId(), item.getCount());
+							System.out.println("Removendo suas potions e revives...");
+							sleepRandom(1000, 2000);
+						}					
+					}
+					
+					for (CatchablePokemon pokemon : map.getCatchablePokemon()) // get all currently Catchable Pokemon around you
+					{
+						pokemon.encounterPokemon();
+						System.out.println("\n----POKEMON ENCONTRADO----");
+						System.out.println("Capturando um " + PokeDictionary.getDisplayName(pokemon.getPokemonIdValue(), Locale.ENGLISH));
+						if (pokemon.isEncountered())
+						{
+							
+							Item pokeball = inventories.getItemBag().getItem(Pokeball.POKEBALL.getBallType());
+							Item greatball = inventories.getItemBag().getItem(Pokeball.GREATBALL.getBallType());
+							Item ultraball = inventories.getItemBag().getItem(Pokeball.ULTRABALL.getBallType());
+							Item berry = inventories.getItemBag().getItem(ItemId.ITEM_RAZZ_BERRY);
+							
+							if (pokeball.getCount() > 3 ||
+								greatball.getCount() > 3 ||
+								ultraball.getCount() > 3)
+							{
+								if (pokeball.getCount() > 3)
+								{
+									catchOptions.usePokeball(Pokeball.POKEBALL);
+								} 
+								else if (greatball.getCount() > 3)
+								{
+									catchOptions.usePokeball(Pokeball.GREATBALL);
+								}
+								else if (ultraball.getCount() > 3)
+								{
+									catchOptions.usePokeball(Pokeball.ULTRABALL);
+								}
+								if (berry.getCount() > 3)
+								{
+									catchOptions.useRazzberries(true);
+								}
+								else
+								{
+									catchOptions.useRazzberries(false);
+								}
+								try {
+									cr = pokemon.catchPokemon(catchOptions); //add CatchResult
+									if (cr.isFailed())
+									{
+										System.out.println("A captura falhou.");
+									} else {
+										System.out.println("Candies: " + cr.getCandyList().stream().mapToInt(Integer::intValue).sum());
+										System.out.println("XP: " + cr.getXpList().stream().mapToInt(Integer::intValue).sum());
+										System.out.println("Stardust: " + cr.getStardustList().stream().mapToInt(Integer::intValue).sum());
+									}
+									pp.updateProfile();
+									stats = pp.getStats();
+									inventories.updateInventories(true); 
+									System.out.println("--------MEUS STATUS--------");
+									System.out.println("Level: " + stats.getLevel());
+									System.out.println("XP: " + stats.getExperience() + " (" + (stats.getNextLevelXp() - stats.getExperience()) + " to next level)");
+								} catch (AsyncPokemonGoException e){
+									System.out.println("Erro desconhecido.");
+									e.printStackTrace();
+								}
+							}
+							else
+							{
+								System.out.println("Você não tem pokebolas...");
+							}
+							sleepRandom(2000, 3000);
+						}
+					}
+					
+					ArrayList<EggIncubator> incubadores = new ArrayList<>();
+					for (EggIncubator eggIncubator : inventories.getIncubators()) //Coloca os ovos para chocar
+					{
+						if (!eggIncubator.isInUse())
+						{
+							incubadores.add(eggIncubator);
+						}
+					}
+					
+					ArrayList<EggPokemon> eggs = new ArrayList<>();
+					for(EggPokemon egg : inventories.getHatchery().getEggs())
+					{
+						if (!egg.isIncubate())
+						{
+							eggs.add(egg);
+						}
+					}
+					if (incubadores != null && eggs != null)
+					{
+						for (int j = 0; j < incubadores.size(); j++)
+						{
+							eggs.get(j).incubate(incubadores.get(j));
+							System.out.println("\nIncubando ovo...");
+							sleepRandom(1000, 1500);
+						}
+					}
+					
+					List<Pokemon> pokemonLista = inventories.getPokebank().getPokemons();
+					int totalPokemon = pokemonLista.size();
+					for (int j = 0; j < totalPokemon; j++)
+					{
+						Pokemon pokemon = inventories.getPokebank().getPokemons().get(j);
+						
+						if (pokemon.getIvRatio() < 0.8)
+						{
+							if (
+									pokemon.getPokemonId().name().equals("PIDGEY") || 
+									pokemon.getPokemonId().name().equals("WEEDLE") || 
+									pokemon.getPokemonId().name().equals("CATERPIE") ||
+									pokemon.getPokemonId().name().equals("ZUBAT") ||
+									pokemon.getPokemonId().name().equals("RATTATA")
+								)
+							{
+								if (pokemon.canEvolve())
+								{
+									System.out.println("\nEvoluindo "
+											+ PokeDictionary.getDisplayName(pokemon.getPokemonId().getNumber(), Locale.ENGLISH)
+											+ " -> " 
+											+ PokeDictionary.getDisplayName(pokemon.getPokemonId().getNumber() + 1, Locale.ENGLISH)
+											+ "..."
+									);
+									pokemon = pokemon.evolve().getEvolvedPokemon();
+									System.out.println("Pokemon evoluido com sucesso!");
+									inventories.updateInventories(true);
+									sleepRandom(1000, 2000);
+								}
+							}
+							System.out.println("\nTransferindo " + PokeDictionary.getDisplayName(pokemon.getPokemonId().getNumber(), Locale.ENGLISH) + "...");
+							pokemon.transferPokemon();
+							System.out.println("Pokemon transferido com sucesso!");
+							inventories.updateInventories(true);
+							totalPokemon--;
+							sleepRandom(1000, 2000);
+						}
+						else
+						{
+							while (pokemon.canEvolve())
 							{
 								System.out.println("\nEvoluindo "
 										+ PokeDictionary.getDisplayName(pokemon.getPokemonId().getNumber(), Locale.ENGLISH)
@@ -248,42 +347,35 @@ public class Main {
 								sleepRandom(1000, 2000);
 							}
 						}
-						System.out.println("\nTransferindo " + PokeDictionary.getDisplayName(pokemon.getPokemonId().getNumber(), Locale.ENGLISH) + "...");
-						pokemon.transferPokemon();
-						System.out.println("Pokemon transferido com sucesso!");
-						inventories.updateInventories(true);
-						totalPokemon--;
-						sleepRandom(1000, 2000);
 					}
-					else
-					{
-						while (pokemon.canEvolve())
-						{
-							System.out.println("\nEvoluindo: " + PokeDictionary.getDisplayName(pokemon.getPokemonId().getNumber(), Locale.ENGLISH));
-							System.out.println("Para: " + PokeDictionary.getDisplayName(pokemon.getPokemonId().getNumber() + 1, Locale.ENGLISH));
-							pokemon = pokemon.evolve().getEvolvedPokemon();
-							System.out.println("Pokemon evoluido com sucesso!");
-							inventories.updateInventories(true);
-							sleepRandom(1000, 2000);
-						}
-					}
+					sleepRandom(800, 1500);
 				}
-				contLogin++;
-				if (contLogin == 100) //reseta a autorização a cada 3 minutos +/-
-				{
-					System.out.println("Atualizando o token...");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			logged = false;
+			do {
+			    try {
+			    	System.out.println("Atualizando o token...");
 					if (opcao == 1)
 					{
-						go.login(new GoogleUserCredentialProvider(httpClient, access));
+						provider = new GoogleUserCredentialProvider(httpClient);
+						provider.login(access);
+						go.login(provider);
+						logged = true;
 					} else {
 						go.login(new PtcCredentialProvider(httpClient, username, password));
+						logged = true;
 					}
-					contLogin = 0;
-				}
-				sleepRandom(800, 1500);
-			}
+			    } catch(Exception w) {
+			    	w.printStackTrace();
+			    	System.out.println("Erro! Tentando logar novamente...");
+			    	sleepRandom(1000, 1500);
+			    }
+			} while(!logged);
+			
 		}
-
+		
 	}
 	
 	public static void sleepRandom(int minMilliseconds, int maxMilliseconds) {
@@ -298,5 +390,13 @@ public class Main {
             e.printStackTrace();
         }
     }
+	
+	public static boolean isPokeball(Item item) {
+		return item.getItemId() == ItemId.ITEM_POKE_BALL
+				|| item.getItemId() == ItemId.ITEM_GREAT_BALL
+				|| item.getItemId() == ItemId.ITEM_ULTRA_BALL
+				|| item.getItemId() == ItemId.ITEM_MASTER_BALL
+				;
+	}
 		
 }
