@@ -54,6 +54,7 @@ public class Main {
 		PokemonGo go = new PokemonGo(httpClient);
 		
 		System.out.println("Faça login pelo google (1) ou PTC (2)");
+		
 		Scanner sc = new Scanner(System.in);
 		Integer opcao = sc.nextInt();
 		Boolean logged = false;
@@ -186,7 +187,6 @@ public class Main {
 							plr = pokestop.loot();
 							System.out.println("\n----------POKESTOP----------");
 							System.out.println("EXP: " + plr.getExperience());
-							System.out.println("Itens: ");
 							for (ItemAward item :  plr.getItemsAwarded())
 							{
 								listaItensPokestop.add(item);
@@ -196,11 +196,12 @@ public class Main {
 							{
 								System.out.println(getDisplayItemName(key.getItemId(), Locale.ENGLISH) + ": " + Collections.frequency(listaItensPokestop,  key));
 							}
+							inventories.updateInventories(true);
+							sleepRandom(1000, 2000);
 						}
 						
 					}
 					
-					inventories.updateInventories(true);
 					ArrayList<Item> listaPotionRevives = new ArrayList<>();
 					for (Item item : inventories.getItemBag().getItems()) //Deleta todas as potions e revives
 					{
@@ -218,9 +219,9 @@ public class Main {
 							inventories.getItemBag().removeItem(
 									listaPotionRevives.get(j).getItemId(),
 									listaPotionRevives.get(j).getCount());
-							inventories.updateInventories(true);
 							sleepRandom(1000, 2000);
 						}
+						inventories.updateInventories(true);
 					}
 					
 					for (CatchablePokemon pokemon : map.getCatchablePokemon()) // get all currently Catchable Pokemon around you
@@ -310,6 +311,8 @@ public class Main {
 									do {
 									    try {
 									    	System.out.println("Atualizando o token...");
+									    	httpClient = new OkHttpClient();
+											go = new PokemonGo(httpClient);
 											if (opcao == 1)
 											{
 												provider = new GoogleUserCredentialProvider(httpClient);
@@ -335,7 +338,7 @@ public class Main {
 							sleepRandom(2000, 3000);
 						}
 					}
-					
+
 					ArrayList<EggIncubator> incubadores = new ArrayList<>();
 					for (EggIncubator eggIncubator : inventories.getIncubators()) //Coloca os ovos para chocar
 					{
@@ -365,6 +368,8 @@ public class Main {
 					
 					ArrayList<Pokemon> pokemonLista = new ArrayList<>();
 					ArrayList<Pokemon> evoluiLista = new ArrayList<>();
+					ArrayList<Pokemon> expFarmLista = new ArrayList<>();
+					
 					for (Pokemon pokemon : inventories.getPokebank().getPokemons())
 					{
 						pokemonLista.add(pokemon);
@@ -377,30 +382,19 @@ public class Main {
 							if (
 									pokemon.getPokemonId().name().equals("PIDGEY") || 
 									pokemon.getPokemonId().name().equals("WEEDLE") || 
-									pokemon.getPokemonId().name().equals("CATERPIE") ||
-									pokemon.getPokemonId().name().equals("ZUBAT") ||
-									pokemon.getPokemonId().name().equals("RATTATA")
+									pokemon.getPokemonId().name().equals("CATERPIE")
 								)
 							{
-								if (pokemon.canEvolve())
-								{
-									System.out.println("\nEvoluindo "
-											+ PokeDictionary.getDisplayName(pokemon.getPokemonId().getNumber(), Locale.ENGLISH)
-											+ " -> " 
-											+ PokeDictionary.getDisplayName(pokemon.getPokemonId().getNumber() + 1, Locale.ENGLISH)
-											+ "..."
-									);
-									pokemon = pokemon.evolve().getEvolvedPokemon();
-									System.out.println("Pokemon evoluido com sucesso!");
-									inventories.updateInventories(true);
-									sleepRandom(1000, 2000);
-								}
+								expFarmLista.add(pokemon);
 							}
-							System.out.println("\nTransferindo " + PokeDictionary.getDisplayName(pokemon.getPokemonId().getNumber(), Locale.ENGLISH) + "...");
-							pokemon.transferPokemon();
-							System.out.println("Pokemon transferido com sucesso!");
-							inventories.updateInventories(true);
-							sleepRandom(1000, 2000);
+							else
+							{
+								System.out.println("\nTransferindo " + PokeDictionary.getDisplayName(pokemon.getPokemonId().getNumber(), Locale.ENGLISH) + "...");
+								pokemon.transferPokemon();
+								System.out.println("Pokemon transferido com sucesso!");
+								inventories.updateInventories(true);
+								sleepRandom(1000, 2000);
+							}
 						}
 						else
 						{
@@ -417,8 +411,6 @@ public class Main {
 					for (Pokemon pokemon : evoluiLista)
 					{
 						
-//						System.out.println("Pokemon : " + pokemon.getPokemonId().name());
-//						System.out.println("Iv : " + pokemon.getIvInPercentage());
 						while (pokemon.canEvolve())
 						{
 							System.out.println("\nEvoluindo "
@@ -433,6 +425,26 @@ public class Main {
 							sleepRandom(1000, 2000);
 						}
 					}
+					
+					//if (expFarmLista.size() > 60) //implementar depois
+					//{
+						for (Pokemon pokemon : expFarmLista)
+						{
+							if (pokemon.canEvolve())
+							{
+								System.out.println("\nEvoluindo "
+										+ PokeDictionary.getDisplayName(pokemon.getPokemonId().getNumber(), Locale.ENGLISH)
+										+ " -> " 
+										+ PokeDictionary.getDisplayName(pokemon.getPokemonId().getNumber() + 1, Locale.ENGLISH)
+										+ "..."
+								);
+								pokemon = pokemon.evolve().getEvolvedPokemon();
+								System.out.println("Pokemon evoluido com sucesso!");
+								inventories.updateInventories(true);
+								sleepRandom(1000, 2000);
+							}
+						}
+					//}
 					
 					sleepRandom(800, 1500);
 				} catch (Exception e) {
