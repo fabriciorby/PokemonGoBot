@@ -323,6 +323,13 @@ public class Main {
 												go.login(new PtcCredentialProvider(httpClient, username, password));
 												logged = true;
 											}
+											go.getPlayerProfile(); // to get the user profile
+											stats = pp.getStats();
+											inventories = go.getInventories();
+											map = go.getMap();
+											catchOptions = new CatchOptions(go);
+											catchOptions.maxPokeballs(3);
+											catchOptions.noMasterBall(true);
 									    } catch(Exception w) {
 									    	w.printStackTrace();
 									    	System.out.println("Erro! Tentando logar novamente...");
