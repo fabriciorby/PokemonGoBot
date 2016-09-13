@@ -72,7 +72,8 @@ public class Main {
 			provider = new GoogleUserCredentialProvider(httpClient);
 
 			// in this url, you will get a code for the google account that is logged
-			System.out.println("Please go to " + GoogleUserCredentialProvider.LOGIN_URL);
+			//System.out.println("Please go to " + GoogleUserCredentialProvider.LOGIN_URL);
+			System.out.println("https://accounts.google.com/o/oauth2/auth?client_id=848232511240-73ri3t7plvk96pj4f85uj8otdat2alem.apps.googleusercontent.com&redirect_uri=urn%3Aietf%3Awg%3Aoauth%3A2.0%3Aoob&response_type=code&scope=openid%20email%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email");
 			System.out.println("Enter authorization code:");
 
 			// Ask the user to enter it in the standard input
@@ -130,9 +131,11 @@ public class Main {
 		}
 		
 		// After this you can access the api from the PokemonGo instance :
+		
 		PlayerProfile pp = go.getPlayerProfile(); // to get the user profile
 		Stats stats = pp.getStats();
 		Inventories inventories = go.getInventories();
+		int level = stats.getLevel();
 		
 		System.out.println("Nome: " + pp.getPlayerData().getUsername());
 		System.out.println("Level: " + stats.getLevel());
@@ -457,6 +460,25 @@ public class Main {
 							sleepRandom(1000, 2000);
 						}
 					//}
+						
+					if (level < stats.getLevel())
+					{
+						level = stats.getLevel();
+						System.out.println("Parabéns! Você agora é level " + level + "!");
+						if (!pp.acceptLevelUpRewards(level).getRewards().isEmpty())
+						{
+							for (ItemAward key : pp.acceptLevelUpRewards(level).getRewards())
+							{
+								System.out.println(key.getItemId().name());
+								System.out.println(getDisplayItemName(key.getItemId(), Locale.ENGLISH));
+							}
+							inventories.updateInventories(true);
+							sleepRandom(1000, 2000);
+						}
+					}
+					
+					pp.checkAndEquipBadges();
+					pp.updateProfile();
 					
 					sleepRandom(800, 1500);
 				} catch (Exception e) {
