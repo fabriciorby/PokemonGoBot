@@ -450,6 +450,11 @@ public class Main {
 								inventories.updateInventories(true);
 								sleepRandom(1000, 2000);
 							}
+							System.out.println("\nTransferindo " + PokeDictionary.getDisplayName(pokemon.getPokemonId().getNumber(), Locale.ENGLISH) + "...");
+							pokemon.transferPokemon();
+							System.out.println("Pokemon transferido com sucesso!");
+							inventories.updateInventories(true);
+							sleepRandom(1000, 2000);
 						}
 					//}
 					
