@@ -144,11 +144,15 @@ public class Main {
 		System.out.println("Team: " + pp.getPlayerData().getTeamValue());
 		System.out.println("Stardust: " + pp.getCurrency(Currency.STARDUST));
 		ArrayList<Point> pontos = new ArrayList<Point>();
+		//ibirapuera
 		pontos.add(new Point(-23.584289, -46.661537));
 		pontos.add(new Point(-23.583952, -46.660532));
 		pontos.add(new Point(-23.584045, -46.659832));
 		pontos.add(new Point(-23.583830, -46.660822));
 		pontos.add(new Point(-23.584547, -46.661737));
+		//av cruzeiro do sul
+//		pontos.add(new Point(-23.502127, -46.624735));
+//		pontos.add(new Point(-23.512827, -46.625067));
 		int cont = 0, distancia;
 		double totalLat, totalLong, parteLat, parteLong;
 		Map map = go.getMap();
@@ -239,24 +243,24 @@ public class Main {
 							Item ultraball = inventories.getItemBag().getItem(Pokeball.ULTRABALL.getBallType());
 							Item berry = inventories.getItemBag().getItem(ItemId.ITEM_RAZZ_BERRY);
 							
-							if (pokeball.getCount() > 3 ||
-								greatball.getCount() > 3 ||
-								ultraball.getCount() > 3)
+							if (pokeball.getCount() > catchOptions.getMaxPokeballs() ||
+								greatball.getCount() > catchOptions.getMaxPokeballs() ||
+								ultraball.getCount() > catchOptions.getMaxPokeballs())
 							{
 								System.out.println("Chance de captura: " + pokemon.encounterPokemon().getCaptureProbability().getCaptureProbability(0));
 								if (pokemon.encounterPokemon().getCaptureProbability().getCaptureProbability(0) > 0.5)
 								{
-									if (pokeball.getCount() > 3)
+									if (pokeball.getCount() > catchOptions.getMaxPokeballs())
 									{
 										catchOptions.usePokeball(Pokeball.POKEBALL);
 										System.out.println("Usando Pokeball...");
 									} 
-									else if (greatball.getCount() > 3)
+									else if (greatball.getCount() > catchOptions.getMaxPokeballs())
 									{
 										catchOptions.usePokeball(Pokeball.GREATBALL);
 										System.out.println("Usando Greatball...");
 									}
-									else if (ultraball.getCount() > 3)
+									else if (ultraball.getCount() > catchOptions.getMaxPokeballs())
 									{
 										catchOptions.usePokeball(Pokeball.ULTRABALL);
 										System.out.println("Usando Ultraball...");
@@ -264,23 +268,23 @@ public class Main {
 								} 
 								else
 								{
-									if (ultraball.getCount() > 3)
+									if (ultraball.getCount() > catchOptions.getMaxPokeballs())
 									{
 										catchOptions.usePokeball(Pokeball.ULTRABALL);
 										System.out.println("Usando Ultraball...");
 									} 
-									else if (greatball.getCount() > 3)
+									else if (greatball.getCount() > catchOptions.getMaxPokeballs())
 									{
 										catchOptions.usePokeball(Pokeball.GREATBALL);
 										System.out.println("Usando Greatball...");
 									}
-									else if (pokeball.getCount() > 3)
+									else if (pokeball.getCount() > catchOptions.getMaxPokeballs())
 									{
 										catchOptions.usePokeball(Pokeball.POKEBALL);
 										System.out.println("Usando Pokeball...");
 									}
 									
-									if (berry.getCount() > 3)
+									if (berry.getCount() > catchOptions.getMaxPokeballs())
 									{
 										catchOptions.useRazzberries(true);
 										System.out.println("Usando Razzberry..");
@@ -498,7 +502,7 @@ public class Main {
 								logged = true;
 							}
 					    } catch(Exception w) {
-					    	w.printStackTrace();
+					    	//w.printStackTrace();
 					    	System.out.println("Erro! Tentando logar novamente...");
 					    	sleepRandom(1000, 1500);
 					    }
